@@ -4,57 +4,78 @@ import { CodeProblem, EvaluationResult } from "@/types/code";
 const GEMINI_API_KEY = "AIzaSyCwFtO6agPTzedSEA_WKx3E29hKDP_a3b4";
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-const PROBLEM_GENERATION_PROMPT = `
-Generate an extremely complex coding problem that:
-1. Solves a real-world distributed systems challenge
-2. Requires optimization for high-throughput (1M+ requests/sec)
-3. Needs to handle edge cases in low-latency environments
-4. Must include concurrency/parallelism challenges
-5. Requires efficient memory management
-
-Include:
-- Detailed problem statement with real-world context
-- 5 technical constraints
-- 3 example inputs/outputs with explanations
-- 4 progressive technical hints
-- 10 hidden test cases with expected outputs
-
-Format as JSON matching the CodeProblem type with:
-{
-  "id": "uuid",
-  "title": "string",
-  "description": "string",
-  "difficulty": "Expert",
-  "timeLimit": number,
-  "testCases": [{"input": "string", "expectedOutput": "string"}],
-  "constraints": ["string"],
-  "examples": [{"input": "string", "output": "string", "explanation": "string"}]
-}`;
-
 export async function evaluateCode(code: string, problem: CodeProblem): Promise<EvaluationResult> {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     
     const prompt = `
-    Analyze this solution for ${problem.title}:
+    As an expert code reviewer, analyze this solution for ${problem.title} with extreme attention to detail:
+
+    USER'S CODE:
     ${code}
 
-    Perform comprehensive analysis including:
-    1. Code quality and architecture assessment
-    2. Time complexity analysis for scale
-    3. Space complexity and memory optimization
-    4. Concurrency and thread safety evaluation
-    5. Error handling and edge cases
-    6. Performance optimization opportunities
-    7. Security considerations
-    8. Best practices adherence
+    PROBLEM REQUIREMENTS:
+    ${problem.description}
+
+    Perform a thorough analysis focusing on:
+    1. Problem-Solving Approach:
+       - How well did they understand and tackle the core problem?
+       - What unique or creative solutions did they implement?
+       - Did they consider all edge cases?
+
+    2. Code Quality & Architecture:
+       - Specific design patterns used
+       - Code organization and modularity
+       - Naming conventions and readability
+       - Use of language-specific features
+
+    3. Performance Analysis:
+       - Detailed time complexity with examples
+       - Space complexity analysis
+       - Specific bottlenecks identified
+       - Optimization opportunities
+
+    4. Technical Proficiency:
+       - Advanced language features used
+       - Framework/library knowledge demonstrated
+       - Best practices followed
+       - Areas showing expertise
+
+    5. Areas for Growth:
+       - Specific code sections that could be improved
+       - Missing optimizations
+       - Security considerations
+       - Error handling improvements
 
     Return ONLY a JSON object with this exact structure (no markdown, no backticks):
     {
       "score": number between 0-100,
       "executionTime": number in milliseconds,
       "memory": number in KB,
-      "feedback": string with detailed analysis,
+      "problemSolvingScore": {
+        "score": number,
+        "approach": string,
+        "creativity": string,
+        "edgeCases": string[]
+      },
+      "codeQualityScore": {
+        "score": number,
+        "patterns": string[],
+        "strengths": string[],
+        "suggestions": string[]
+      },
+      "technicalProficiency": {
+        "score": number,
+        "advancedFeatures": string[],
+        "bestPractices": string[],
+        "areasOfExpertise": string[]
+      },
+      "performanceMetrics": {
+        "timeComplexity": string,
+        "spaceComplexity": string,
+        "bottlenecks": string[],
+        "optimizations": string[]
+      },
       "testCaseResults": [{
         "passed": boolean,
         "input": string,
@@ -62,17 +83,13 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
         "actualOutput": string,
         "executionTime": number
       }],
-      "strengths": string[],
-      "weaknesses": string[],
-      "optimizationSuggestions": string[],
       "securityConsiderations": string[],
-      "scalabilityAnalysis": string
+      "overallFeedback": string
     }`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
     
-    // Clean up the response text
     const cleanedResponse = response.text()
       .replace(/```json\s*/g, '')
       .replace(/```\s*$/g, '')
