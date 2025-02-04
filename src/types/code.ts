@@ -27,12 +27,16 @@ export interface CodeSubmission {
 }
 
 export interface EvaluationResult {
-  success: boolean;
   score: number;
   executionTime: number;
   memory: number;
-  testCaseResults: TestCaseResult[];
   feedback: string;
+  testCaseResults: TestCaseResult[];
+  strengths: string[];
+  weaknesses: string[];
+  optimizationSuggestions: string[];
+  securityConsiderations: string[];
+  scalabilityAnalysis: string;
 }
 
 export interface TestCaseResult {
