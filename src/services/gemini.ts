@@ -23,12 +23,12 @@ export async function evaluateCode(code: string, problem: any) {
       5. Best practices
       6. Potential improvements
 
-      Format the response as JSON with the following structure:
+      Return ONLY a JSON object with this exact structure (no markdown, no backticks):
       {
-        "score": number (0-100),
-        "executionTime": number (milliseconds),
-        "memory": number (KB),
-        "feedback": string,
+        "score": number between 0-100,
+        "executionTime": number in milliseconds,
+        "memory": number in KB,
+        "feedback": string with analysis,
         "testCaseResults": [
           {
             "passed": boolean,
@@ -43,7 +43,19 @@ export async function evaluateCode(code: string, problem: any) {
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    return JSON.parse(response.text());
+    
+    // Clean up the response text by removing any markdown formatting
+    const cleanedResponse = response.text()
+      .replace(/```json\s*/g, '')
+      .replace(/```\s*$/g, '')
+      .trim();
+
+    try {
+      return JSON.parse(cleanedResponse);
+    } catch (parseError) {
+      console.error("Failed to parse response:", cleanedResponse);
+      throw new Error("Invalid response format from Gemini API");
+    }
   } catch (error) {
     console.error("Error evaluating code:", error);
     throw error;
