@@ -2,26 +2,47 @@ import { useEffect, useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { EvaluationResult } from '@/types/code';
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
-import { Check, X, AlertTriangle, ArrowRight, Brain, Cpu, Shield, Zap } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis } from 'recharts';
+import { Check, AlertTriangle, Brain, Shield, Zap } from "lucide-react";
 
 export default function Results() {
   const [result, setResult] = useState<EvaluationResult | null>(null);
   const [code, setCode] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const storedResult = localStorage.getItem('evaluationResult');
     const storedCode = localStorage.getItem('submittedCode');
-    if (storedResult) setResult(JSON.parse(storedResult));
-    if (storedCode) setCode(storedCode);
+    
+    if (storedResult) {
+      setResult(JSON.parse(storedResult));
+    }
+    if (storedCode) {
+      setCode(storedCode);
+    }
+    setIsLoading(false);
   }, []);
 
-  if (!result) return null;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-gray-100 flex items-center justify-center">
+        <div className="text-2xl font-semibold text-cyan-400">Loading results...</div>
+      </div>
+    );
+  }
+
+  if (!result) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-gray-100 flex items-center justify-center">
+        <div className="text-2xl font-semibold text-red-400">No results found</div>
+      </div>
+    );
+  }
 
   const metrics = [
     { name: 'Code Quality', value: result.score },
-    { name: 'Performance', value: Math.min(100, 10000 / result.executionTime) },
-    { name: 'Memory Usage', value: Math.min(100, 1000000 / result.memory) },
+    { name: 'Performance', value: Math.min(100, 10000 / (result.executionTime || 1)) },
+    { name: 'Memory Usage', value: Math.min(100, 1000000 / (result.memory || 1)) },
     { name: 'Test Cases', value: (result.testCaseResults.filter(t => t.passed).length / result.testCaseResults.length) * 100 }
   ];
 
@@ -39,14 +60,14 @@ export default function Results() {
               Performance Analysis
             </h2>
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
+              <ChartContainer config={{}}>
                 <BarChart data={metrics}>
                   <XAxis dataKey="name" stroke="#94a3b8" />
                   <YAxis stroke="#94a3b8" />
                   <Bar dataKey="value" fill="#22d3ee" />
                   <ChartTooltip />
                 </BarChart>
-              </ResponsiveContainer>
+              </ChartContainer>
             </div>
           </Card>
 
@@ -59,13 +80,13 @@ export default function Results() {
               <div className="p-4 bg-gray-900/50 rounded-lg">
                 <div className="text-sm text-gray-400">Execution Time</div>
                 <div className="text-2xl font-mono text-cyan-400">
-                  {result.executionTime.toFixed(2)}ms
+                  {(result.executionTime || 0).toFixed(2)}ms
                 </div>
               </div>
               <div className="p-4 bg-gray-900/50 rounded-lg">
                 <div className="text-sm text-gray-400">Memory Usage</div>
                 <div className="text-2xl font-mono text-cyan-400">
-                  {(result.memory / 1024).toFixed(2)}MB
+                  {((result.memory || 0) / 1024).toFixed(2)}MB
                 </div>
               </div>
               <div className="p-4 bg-gray-900/50 rounded-lg">
