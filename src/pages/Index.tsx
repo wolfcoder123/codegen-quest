@@ -11,36 +11,55 @@ import { ChevronLeft, ChevronRight, Clock, Code2, Cpu } from "lucide-react";
 
 const sampleProblem: CodeProblem = {
   id: "1",
-  title: "High-Frequency Trading System",
-  description: `Design and implement a high-frequency trading system that processes market data streams and executes trades with ultra-low latency. The system should:
+  title: "Distributed Rate Limiter Design",
+  description: `Design and implement a distributed rate limiter that can handle millions of requests per second across multiple datacenters. The system should:
 
-1. Process 1M+ market data updates per second
-2. Maintain order book consistency across multiple exchanges
-3. Execute trades with sub-millisecond latency
-4. Handle network partitions and data inconsistencies
-5. Implement a sophisticated trading strategy based on market microstructure
+1. Enforce rate limits across a distributed system with eventual consistency
+2. Handle network partitions and node failures gracefully
+3. Minimize false positives/negatives in rate limit decisions
+4. Support multiple rate limit algorithms (token bucket, leaky bucket, sliding window)
+5. Provide real-time analytics on rate limit violations
+6. Scale horizontally with minimal coordination overhead
+7. Support different rate limits for different API endpoints/users
+8. Handle clock skew between nodes
 
-Your solution must use lock-free data structures and handle all edge cases.`,
+Your solution must be production-ready, handling all edge cases and failure scenarios.`,
   difficulty: "Expert",
   timeLimit: 3600,
   testCases: [
     {
-      input: `MarketData(timestamp=1645084800, symbol="BTC-USD", price=45000.00, volume=2.5)`,
-      expectedOutput: `TradeDecision(action=BUY, quantity=1.5, price=45000.00, latency=0.05ms)`
+      input: `{
+  "requests": [
+    {"timestamp": 1645084800, "userId": "user1", "endpoint": "/api/v1/search"},
+    {"timestamp": 1645084801, "userId": "user1", "endpoint": "/api/v1/search"},
+    {"timestamp": 1645084802, "userId": "user1", "endpoint": "/api/v1/search"}
+  ],
+  "rateLimits": {
+    "/api/v1/search": {"requests": 2, "window": "1s"}
+  }
+}`,
+      expectedOutput: `{
+  "allowed": [true, true, false],
+  "retryAfter": [null, null, 1000],
+  "remaining": [1, 0, 0]
+}`
     }
   ],
   constraints: [
-    "Maximum latency: 100 microseconds",
-    "Memory usage: < 16GB",
-    "Zero garbage collection pauses",
-    "99.999% uptime requirement",
-    "Handle 100k+ concurrent connections"
+    "Maximum latency: 10ms per request",
+    "Memory usage: < 1GB per node",
+    "Network bandwidth: < 100MB/s per node",
+    "Consistency delay: < 100ms",
+    "False positive rate: < 0.01%",
+    "Availability: 99.99%",
+    "Support for 100+ million unique users",
+    "Handle 1M+ requests/second per node"
   ],
   examples: [
     {
-      input: "Stream of 1M market updates/second",
-      output: "Processed trades with 50μs latency",
-      explanation: "System maintains consistent order book while processing high-throughput data"
+      input: "Burst of 1000 requests from user1 in 100ms",
+      output: "Only first 10 requests allowed, others rate limited",
+      explanation: "Token bucket algorithm correctly throttles burst traffic while allowing legitimate requests"
     }
   ]
 };

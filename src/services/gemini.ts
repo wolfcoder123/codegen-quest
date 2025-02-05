@@ -9,82 +9,82 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     
     const prompt = `
-    As an expert code reviewer, analyze this solution for ${problem.title} with extreme attention to detail:
-
-    USER'S CODE:
+    You are an expert code reviewer analyzing a solution for this coding problem:
+    
+    PROBLEM:
+    ${problem.title}
+    ${problem.description}
+    
+    Constraints:
+    ${problem.constraints.join('\n')}
+    
+    USER'S SUBMITTED CODE:
     ${code}
 
-    PROBLEM REQUIREMENTS:
-    ${problem.description}
+    Perform an extremely detailed technical analysis of this specific code submission. Focus on:
 
-    Perform a thorough analysis focusing on:
-    1. Problem-Solving Approach:
-       - How well did they understand and tackle the core problem?
-       - What unique or creative solutions did they implement?
-       - Did they consider all edge cases?
+    1. Code Analysis:
+       - Evaluate how well the code actually solves the given problem
+       - Identify specific algorithmic approaches used
+       - Point out any missing edge cases or requirements
+       - Analyze error handling and robustness
+    
+    2. Technical Implementation:
+       - Evaluate specific data structures and algorithms used
+       - Analyze time and space complexity with detailed explanations
+       - Identify performance bottlenecks in THIS specific code
+       - Point out any potential memory leaks or resource management issues
+    
+    3. Code Quality:
+       - Evaluate specific design patterns and architectural choices
+       - Analyze code organization and modularity
+       - Review error handling and edge case coverage
+       - Check for proper separation of concerns
+    
+    4. Problem-Solving Approach:
+       - Evaluate the overall strategy used to solve the problem
+       - Identify creative or innovative aspects of the solution
+       - Point out any missed optimizations
+       - Analyze how well the solution scales
 
-    2. Code Quality & Architecture:
-       - Specific design patterns used
-       - Code organization and modularity
-       - Naming conventions and readability
-       - Use of language-specific features
-
-    3. Performance Analysis:
-       - Detailed time complexity with examples
-       - Space complexity analysis
-       - Specific bottlenecks identified
-       - Optimization opportunities
-
-    4. Technical Proficiency:
-       - Advanced language features used
-       - Framework/library knowledge demonstrated
-       - Best practices followed
-       - Areas showing expertise
-
-    5. Areas for Growth:
-       - Specific code sections that could be improved
-       - Missing optimizations
-       - Security considerations
-       - Error handling improvements
-
-    Return ONLY a JSON object with this exact structure (no markdown, no backticks):
+    Return a JSON object with this structure (no markdown, no backticks):
     {
-      "score": number between 0-100,
-      "executionTime": number in milliseconds,
-      "memory": number in KB,
+      "score": <overall score 0-100 based on actual code quality>,
+      "executionTime": <estimated execution time in ms>,
+      "memory": <estimated memory usage in KB>,
       "problemSolvingScore": {
-        "score": number,
-        "approach": string,
-        "creativity": string,
-        "edgeCases": string[]
+        "score": <score 0-100>,
+        "approach": "<detailed analysis of problem-solving approach>",
+        "creativity": "<specific creative aspects found>",
+        "edgeCases": ["<specific edge cases handled or missed>"]
       },
       "codeQualityScore": {
-        "score": number,
-        "patterns": string[],
-        "strengths": string[],
-        "suggestions": string[]
+        "score": <score 0-100>,
+        "patterns": ["<specific patterns identified>"],
+        "strengths": ["<specific code strengths>"],
+        "suggestions": ["<specific actionable improvements>"]
       },
       "technicalProficiency": {
-        "score": number,
-        "advancedFeatures": string[],
-        "bestPractices": string[],
-        "areasOfExpertise": string[]
+        "score": <score 0-100>,
+        "advancedFeatures": ["<specific advanced features used>"],
+        "bestPractices": ["<specific best practices followed>"],
+        "areasOfExpertise": ["<demonstrated areas of expertise>"]
       },
       "performanceMetrics": {
-        "timeComplexity": string,
-        "spaceComplexity": string,
-        "bottlenecks": string[],
-        "optimizations": string[]
+        "timeComplexity": "<detailed big O analysis>",
+        "spaceComplexity": "<detailed space complexity>",
+        "bottlenecks": ["<specific performance bottlenecks>"],
+        "optimizations": ["<specific optimization opportunities>"]
       },
       "testCaseResults": [{
-        "passed": boolean,
-        "input": string,
-        "expectedOutput": string,
-        "actualOutput": string,
-        "executionTime": number
+        "passed": <true/false based on actual test case execution>,
+        "input": "<test case input>",
+        "expectedOutput": "<expected output>",
+        "actualOutput": "<actual output from code>",
+        "executionTime": <actual execution time in ms>
       }],
-      "securityConsiderations": string[],
-      "overallFeedback": string
+      "securityConsiderations": ["<specific security issues found>"],
+      "overallFeedback": "<detailed summary of key findings>"
     }`;
 
     const result = await model.generateContent(prompt);
@@ -96,7 +96,14 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
       .trim();
 
     try {
-      return JSON.parse(cleanedResponse);
+      const evaluation = JSON.parse(cleanedResponse);
+      
+      // Validate the response has required fields
+      if (!evaluation.score || !evaluation.problemSolvingScore || !evaluation.codeQualityScore) {
+        throw new Error("Invalid evaluation response structure");
+      }
+      
+      return evaluation;
     } catch (parseError) {
       console.error("Failed to parse response:", cleanedResponse);
       throw new Error("Invalid response format from Gemini API");
