@@ -9,8 +9,8 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
     throw new Error("No code submitted for evaluation");
   }
 
-  console.log("Evaluating code:", code); // Debug log
-  console.log("Problem:", problem.title); // Debug log
+  console.log("Evaluating code:", code);
+  console.log("Problem:", problem.title);
 
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
@@ -31,37 +31,53 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
     USER'S SUBMITTED CODE:
     ${code}
 
-    Perform a comprehensive technical analysis of this code submission. Focus on:
+    Perform an extremely detailed technical analysis of this code submission. Focus on:
 
     1. Test Case Validation:
     - Run each test case through the code
     - Compare outputs with expected results
     - Calculate pass/fail ratio
-    - Identify any edge cases not covered
+    - Identify edge cases and their handling
     
     2. Code Quality Analysis:
     - Evaluate code structure and organization
-    - Check for proper error handling
+    - Check error handling comprehensiveness
     - Assess variable naming and documentation
     - Analyze modularity and reusability
+    - Identify design patterns used
     
     3. Performance Analysis:
-    - Calculate precise time complexity
-    - Measure space complexity
+    - Calculate precise time complexity with explanation
+    - Measure space complexity with justification
     - Identify specific performance bottlenecks
     - Suggest concrete optimizations
+    - Analyze algorithmic efficiency
     
     4. Technical Proficiency:
-    - Evaluate algorithm selection
-    - Assess data structure usage
+    - Evaluate algorithm selection and implementation
+    - Assess data structure usage and appropriateness
     - Review design patterns implementation
     - Check for language-specific best practices
+    - Analyze code maintainability
     
     5. Problem-Solving Approach:
     - Analyze the overall solution strategy
     - Evaluate trade-off decisions
     - Assess scalability considerations
     - Review architectural choices
+    - Identify innovative approaches
+
+    6. Specific Code Strengths:
+    - Highlight particularly elegant solutions
+    - Identify clever optimizations
+    - Note effective use of language features
+    - Recognize exceptional error handling
+    
+    7. Security Analysis:
+    - Identify potential vulnerabilities
+    - Check for secure coding practices
+    - Analyze input validation
+    - Review error handling security
 
     Return a detailed JSON object with this exact structure (no markdown, no backticks):
     {
@@ -106,7 +122,7 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
     const result = await model.generateContent(prompt);
     const response = await result.response;
     
-    console.log("Raw Gemini response:", response.text()); // Debug log
+    console.log("Raw Gemini response:", response.text());
     
     const cleanedResponse = response.text()
       .replace(/```json\s*/g, '')
@@ -116,22 +132,19 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
     try {
       const evaluation = JSON.parse(cleanedResponse);
       
-      // Validate the response structure
       if (!evaluation.score || !evaluation.problemSolvingScore || !evaluation.codeQualityScore) {
         throw new Error("Invalid evaluation response structure");
       }
       
-      // Ensure all scores are numbers between 0-100
       evaluation.score = Math.min(100, Math.max(0, Number(evaluation.score)));
       evaluation.problemSolvingScore.score = Math.min(100, Math.max(0, Number(evaluation.problemSolvingScore.score)));
       evaluation.codeQualityScore.score = Math.min(100, Math.max(0, Number(evaluation.codeQualityScore.score)));
       evaluation.technicalProficiency.score = Math.min(100, Math.max(0, Number(evaluation.technicalProficiency.score)));
       
-      // Ensure arrays exist
       evaluation.testCaseResults = evaluation.testCaseResults || [];
       evaluation.securityConsiderations = evaluation.securityConsiderations || [];
       
-      console.log("Processed evaluation:", evaluation); // Debug log
+      console.log("Processed evaluation:", evaluation);
       
       return evaluation;
     } catch (parseError) {
