@@ -25,57 +25,54 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
     USER'S CODE:
     ${code}
 
-    Provide a detailed analysis in valid JSON format with NO COMMENTS. Include:
-    1. Overall score and metrics
-    2. Problem-solving approach analysis
-    3. Code quality evaluation
-    4. Technical proficiency assessment
-    5. Performance analysis
-    6. Security considerations
-    7. Specific strengths and areas for improvement
-    8. Best practices followed and violated
-    9. Code architecture and design patterns
-    10. Scalability and maintainability analysis
-
-    Return ONLY a JSON object with this structure (no markdown, no comments, no backticks):
+    Evaluate the code and return a JSON object with the following structure (NO comments, NO markdown, ONLY valid JSON):
     {
-      "score": number,
-      "executionTime": number,
-      "memory": number,
+      "score": <overall score between 0-100>,
+      "executionTime": <estimated execution time in ms>,
+      "memory": <estimated memory usage in MB>,
       "problemSolvingScore": {
-        "score": number,
-        "approach": "string",
-        "creativity": "string",
-        "edgeCases": ["string"]
+        "score": <score between 0-100>,
+        "approach": "<detailed analysis of problem-solving approach>",
+        "creativity": "<analysis of creative solutions and innovative thinking>",
+        "edgeCases": ["<list of edge cases handled or missed>"]
       },
       "codeQualityScore": {
-        "score": number,
-        "patterns": ["string"],
-        "strengths": ["string"],
-        "suggestions": ["string"]
+        "score": <score between 0-100>,
+        "patterns": ["<list of design patterns used>"],
+        "strengths": ["<detailed list of code strengths>"],
+        "suggestions": ["<specific improvement suggestions>"]
       },
       "technicalProficiency": {
-        "score": number,
-        "advancedFeatures": ["string"],
-        "bestPractices": ["string"],
-        "areasOfExpertise": ["string"]
+        "score": <score between 0-100>,
+        "advancedFeatures": ["<list of advanced language features used>"],
+        "bestPractices": ["<list of best practices followed>"],
+        "areasOfExpertise": ["<areas where code shows expertise>"]
       },
       "performanceMetrics": {
-        "timeComplexity": "string",
-        "spaceComplexity": "string",
-        "bottlenecks": ["string"],
-        "optimizations": ["string"]
+        "timeComplexity": "<Big O notation>",
+        "spaceComplexity": "<Big O notation>",
+        "bottlenecks": ["<list of performance bottlenecks>"],
+        "optimizations": ["<suggested optimizations>"]
       },
       "testCaseResults": [{
-        "passed": boolean,
-        "input": "string",
-        "expectedOutput": "string",
-        "actualOutput": "string",
-        "executionTime": number
+        "passed": <boolean>,
+        "input": "<test input>",
+        "expectedOutput": "<expected output>",
+        "actualOutput": "<actual output>",
+        "executionTime": <time in ms>
       }],
-      "securityConsiderations": ["string"],
-      "overallFeedback": "string"
-    }`;
+      "securityConsiderations": ["<list of security considerations>"],
+      "overallFeedback": "<comprehensive feedback>"
+    }
+
+    Ensure the response:
+    1. Is VALID JSON (no comments, no markdown)
+    2. Includes detailed analysis in each section
+    3. Provides specific, actionable feedback
+    4. Covers all aspects of code quality
+    5. Identifies both strengths and areas for improvement
+    6. Suggests concrete optimization strategies
+    7. Evaluates algorithmic complexity accurately`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
@@ -93,11 +90,12 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
     try {
       const evaluation = JSON.parse(cleanedResponse);
       
-      // Validate required fields and normalize scores
+      // Validate and normalize required fields
       if (!evaluation.score || typeof evaluation.score !== 'number') {
         throw new Error("Invalid score in evaluation response");
       }
       
+      // Normalize scores to 0-100 range
       evaluation.score = Math.min(100, Math.max(0, Number(evaluation.score)));
       
       if (evaluation.problemSolvingScore) {
@@ -115,12 +113,15 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
       // Ensure arrays exist even if empty
       evaluation.testCaseResults = evaluation.testCaseResults || [];
       evaluation.securityConsiderations = evaluation.securityConsiderations || [];
+      evaluation.codeQualityScore = evaluation.codeQualityScore || {};
       evaluation.codeQualityScore.patterns = evaluation.codeQualityScore.patterns || [];
       evaluation.codeQualityScore.strengths = evaluation.codeQualityScore.strengths || [];
       evaluation.codeQualityScore.suggestions = evaluation.codeQualityScore.suggestions || [];
+      evaluation.technicalProficiency = evaluation.technicalProficiency || {};
       evaluation.technicalProficiency.advancedFeatures = evaluation.technicalProficiency.advancedFeatures || [];
       evaluation.technicalProficiency.bestPractices = evaluation.technicalProficiency.bestPractices || [];
       evaluation.technicalProficiency.areasOfExpertise = evaluation.technicalProficiency.areasOfExpertise || [];
+      evaluation.performanceMetrics = evaluation.performanceMetrics || {};
       evaluation.performanceMetrics.bottlenecks = evaluation.performanceMetrics.bottlenecks || [];
       evaluation.performanceMetrics.optimizations = evaluation.performanceMetrics.optimizations || [];
       
