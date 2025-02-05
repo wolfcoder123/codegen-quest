@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Card } from "@/components/ui/card";
-import { EvaluationResult } from '@/types/code';
+import { EvaluationResult, CodeProblem } from '@/types/code';
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { Check, AlertTriangle, Brain, Shield, Zap, Code, Bug, Cpu, Star, Lightbulb, Target, Rocket } from "lucide-react";
