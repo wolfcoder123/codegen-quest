@@ -71,18 +71,39 @@ export default function Index() {
   const navigate = useNavigate();
 
   const handleSubmit = async () => {
+    if (!code || code.trim() === '') {
+      toast({
+        title: "No Code Submitted",
+        description: "Please write some code before submitting.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsEvaluating(true);
+      console.log("Submitting code for evaluation:", code); // Debug log
+      
       const evaluation = await evaluateCode(code, sampleProblem);
+      console.log("Received evaluation:", evaluation); // Debug log
+      
+      if (!evaluation || typeof evaluation.score !== 'number') {
+        throw new Error("Invalid evaluation result");
+      }
+      
       setResult(evaluation);
-      // Store result in localStorage for the results page
+      
+      // Store complete evaluation data
       localStorage.setItem('evaluationResult', JSON.stringify(evaluation));
       localStorage.setItem('submittedCode', code);
+      localStorage.setItem('problemDetails', JSON.stringify(sampleProblem));
+      
       navigate('/results');
     } catch (error) {
+      console.error("Evaluation error:", error);
       toast({
         title: "Evaluation Failed",
-        description: "An error occurred while evaluating your code.",
+        description: error instanceof Error ? error.message : "An error occurred while evaluating your code.",
         variant: "destructive",
       });
     } finally {

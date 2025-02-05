@@ -5,6 +5,13 @@ const GEMINI_API_KEY = "AIzaSyCwFtO6agPTzedSEA_WKx3E29hKDP_a3b4";
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 export async function evaluateCode(code: string, problem: CodeProblem): Promise<EvaluationResult> {
+  if (!code || code.trim() === '') {
+    throw new Error("No code submitted for evaluation");
+  }
+
+  console.log("Evaluating code:", code); // Debug log
+  console.log("Problem:", problem.title); // Debug log
+
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     
@@ -18,38 +25,47 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
     Constraints:
     ${problem.constraints.join('\n')}
     
+    Test Cases:
+    ${JSON.stringify(problem.testCases, null, 2)}
+    
     USER'S SUBMITTED CODE:
     ${code}
 
-    Perform an extremely detailed technical analysis of this specific code submission. Focus on:
+    Perform a comprehensive technical analysis of this code submission. Focus on:
 
-    1. Code Analysis:
-       - Evaluate how well the code actually solves the given problem
-       - Identify specific algorithmic approaches used
-       - Point out any missing edge cases or requirements
-       - Analyze error handling and robustness
+    1. Test Case Validation:
+    - Run each test case through the code
+    - Compare outputs with expected results
+    - Calculate pass/fail ratio
+    - Identify any edge cases not covered
     
-    2. Technical Implementation:
-       - Evaluate specific data structures and algorithms used
-       - Analyze time and space complexity with detailed explanations
-       - Identify performance bottlenecks in THIS specific code
-       - Point out any potential memory leaks or resource management issues
+    2. Code Quality Analysis:
+    - Evaluate code structure and organization
+    - Check for proper error handling
+    - Assess variable naming and documentation
+    - Analyze modularity and reusability
     
-    3. Code Quality:
-       - Evaluate specific design patterns and architectural choices
-       - Analyze code organization and modularity
-       - Review error handling and edge case coverage
-       - Check for proper separation of concerns
+    3. Performance Analysis:
+    - Calculate precise time complexity
+    - Measure space complexity
+    - Identify specific performance bottlenecks
+    - Suggest concrete optimizations
     
-    4. Problem-Solving Approach:
-       - Evaluate the overall strategy used to solve the problem
-       - Identify creative or innovative aspects of the solution
-       - Point out any missed optimizations
-       - Analyze how well the solution scales
+    4. Technical Proficiency:
+    - Evaluate algorithm selection
+    - Assess data structure usage
+    - Review design patterns implementation
+    - Check for language-specific best practices
+    
+    5. Problem-Solving Approach:
+    - Analyze the overall solution strategy
+    - Evaluate trade-off decisions
+    - Assess scalability considerations
+    - Review architectural choices
 
-    Return a JSON object with this structure (no markdown, no backticks):
+    Return a detailed JSON object with this exact structure (no markdown, no backticks):
     {
-      "score": <overall score 0-100 based on actual code quality>,
+      "score": <overall score 0-100>,
       "executionTime": <estimated execution time in ms>,
       "memory": <estimated memory usage in KB>,
       "problemSolvingScore": {
@@ -90,6 +106,8 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
     const result = await model.generateContent(prompt);
     const response = await result.response;
     
+    console.log("Raw Gemini response:", response.text()); // Debug log
+    
     const cleanedResponse = response.text()
       .replace(/```json\s*/g, '')
       .replace(/```\s*$/g, '')
@@ -98,14 +116,27 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
     try {
       const evaluation = JSON.parse(cleanedResponse);
       
-      // Validate the response has required fields
+      // Validate the response structure
       if (!evaluation.score || !evaluation.problemSolvingScore || !evaluation.codeQualityScore) {
         throw new Error("Invalid evaluation response structure");
       }
       
+      // Ensure all scores are numbers between 0-100
+      evaluation.score = Math.min(100, Math.max(0, Number(evaluation.score)));
+      evaluation.problemSolvingScore.score = Math.min(100, Math.max(0, Number(evaluation.problemSolvingScore.score)));
+      evaluation.codeQualityScore.score = Math.min(100, Math.max(0, Number(evaluation.codeQualityScore.score)));
+      evaluation.technicalProficiency.score = Math.min(100, Math.max(0, Number(evaluation.technicalProficiency.score)));
+      
+      // Ensure arrays exist
+      evaluation.testCaseResults = evaluation.testCaseResults || [];
+      evaluation.securityConsiderations = evaluation.securityConsiderations || [];
+      
+      console.log("Processed evaluation:", evaluation); // Debug log
+      
       return evaluation;
     } catch (parseError) {
-      console.error("Failed to parse response:", cleanedResponse);
+      console.error("Failed to parse Gemini response:", parseError);
+      console.error("Raw response:", cleanedResponse);
       throw new Error("Invalid response format from Gemini API");
     }
   } catch (error) {

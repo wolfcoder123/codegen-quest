@@ -4,23 +4,45 @@ import { EvaluationResult } from '@/types/code';
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { Check, AlertTriangle, Brain, Shield, Zap, Code, Bug, Cpu, Star, Lightbulb, Target, Rocket } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 export default function Results() {
   const [result, setResult] = useState<EvaluationResult | null>(null);
   const [code, setCode] = useState<string>("");
+  const [problem, setProblem] = useState<CodeProblem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedResult = localStorage.getItem('evaluationResult');
-    const storedCode = localStorage.getItem('submittedCode');
-    
-    if (storedResult) {
-      setResult(JSON.parse(storedResult));
-    }
-    if (storedCode) {
+    try {
+      const storedResult = localStorage.getItem('evaluationResult');
+      const storedCode = localStorage.getItem('submittedCode');
+      const storedProblem = localStorage.getItem('problemDetails');
+      
+      if (!storedResult || !storedCode || !storedProblem) {
+        throw new Error("Missing evaluation data");
+      }
+      
+      const parsedResult = JSON.parse(storedResult);
+      const parsedProblem = JSON.parse(storedProblem);
+      
+      // Validate the parsed result
+      if (!parsedResult.score || typeof parsedResult.score !== 'number') {
+        throw new Error("Invalid evaluation result format");
+      }
+      
+      setResult(parsedResult);
       setCode(storedCode);
+      setProblem(parsedProblem);
+    } catch (error) {
+      console.error("Error loading results:", error);
+      toast({
+        title: "Error Loading Results",
+        description: "Could not load evaluation results. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
   if (isLoading) {
@@ -45,10 +67,26 @@ export default function Results() {
   }
 
   const metrics = [
-    { name: 'Problem Solving', value: result.problemSolvingScore?.score || 0 },
-    { name: 'Code Quality', value: result.codeQualityScore?.score || 0 },
-    { name: 'Technical Proficiency', value: result.technicalProficiency?.score || 0 },
-    { name: 'Overall Score', value: result.score || 0 }
+    { 
+      name: 'Problem Solving', 
+      value: result.problemSolvingScore?.score || 0,
+      color: '#22d3ee'
+    },
+    { 
+      name: 'Code Quality', 
+      value: result.codeQualityScore?.score || 0,
+      color: '#818cf8'
+    },
+    { 
+      name: 'Technical Proficiency', 
+      value: result.technicalProficiency?.score || 0,
+      color: '#c084fc'
+    },
+    { 
+      name: 'Overall Score', 
+      value: result.score || 0,
+      color: '#34d399'
+    }
   ];
 
   return (
