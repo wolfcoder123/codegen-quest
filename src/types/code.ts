@@ -45,6 +45,7 @@ export interface TechnicalProficiency {
   advancedFeatures: string[];
   bestPractices: string[];
   areasOfExpertise: string[];
+  improvementAreas: string[];
 }
 
 export interface PerformanceMetrics {
@@ -52,6 +53,13 @@ export interface PerformanceMetrics {
   spaceComplexity: string;
   bottlenecks: string[];
   optimizations: string[];
+}
+
+export interface CodeAnalysis {
+  strengths: string[];
+  weaknesses: string[];
+  bestPractices: string[];
+  improvements: string[];
 }
 
 export interface EvaluationResult {
@@ -65,6 +73,8 @@ export interface EvaluationResult {
   testCaseResults: TestCaseResult[];
   securityConsiderations: string[];
   overallFeedback: string;
+  codeAnalysis: CodeAnalysis;
+  learningResources: string[];
 }
 
 export interface TestCaseResult {

@@ -17,6 +17,7 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
     
     const prompt = `
     You are an expert code evaluator. Analyze this code submission thoroughly and provide a detailed evaluation.
+    Focus heavily on providing specific, actionable feedback about strengths and areas for improvement.
     
     PROBLEM:
     ${problem.title}
@@ -46,7 +47,8 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
         "score": <score between 0-100>,
         "advancedFeatures": ["<list of advanced language features used>"],
         "bestPractices": ["<list of best practices followed>"],
-        "areasOfExpertise": ["<areas where code shows expertise>"]
+        "areasOfExpertise": ["<areas where code shows expertise>"],
+        "improvementAreas": ["<specific areas needing improvement>"]
       },
       "performanceMetrics": {
         "timeComplexity": "<Big O notation>",
@@ -54,15 +56,15 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
         "bottlenecks": ["<list of performance bottlenecks>"],
         "optimizations": ["<suggested optimizations>"]
       },
-      "testCaseResults": [{
-        "passed": <boolean>,
-        "input": "<test input>",
-        "expectedOutput": "<expected output>",
-        "actualOutput": "<actual output>",
-        "executionTime": <time in ms>
-      }],
+      "codeAnalysis": {
+        "strengths": ["<detailed list of code strengths with explanations>"],
+        "weaknesses": ["<detailed list of code weaknesses with explanations>"],
+        "bestPractices": ["<list of best practices implemented>"],
+        "improvements": ["<detailed suggestions for improvement>"]
+      },
       "securityConsiderations": ["<list of security considerations>"],
-      "overallFeedback": "<comprehensive feedback>"
+      "overallFeedback": "<comprehensive feedback>",
+      "learningResources": ["<recommended resources for improvement>"]
     }
 
     Ensure the response:
@@ -72,7 +74,8 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
     4. Covers all aspects of code quality
     5. Identifies both strengths and areas for improvement
     6. Suggests concrete optimization strategies
-    7. Evaluates algorithmic complexity accurately`;
+    7. Evaluates algorithmic complexity accurately
+    8. Includes specific examples from the code to support feedback`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
@@ -124,6 +127,13 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
       evaluation.performanceMetrics = evaluation.performanceMetrics || {};
       evaluation.performanceMetrics.bottlenecks = evaluation.performanceMetrics.bottlenecks || [];
       evaluation.performanceMetrics.optimizations = evaluation.performanceMetrics.optimizations || [];
+      evaluation.codeAnalysis = evaluation.codeAnalysis || {
+        strengths: [],
+        weaknesses: [],
+        bestPractices: [],
+        improvements: []
+      };
+      evaluation.learningResources = evaluation.learningResources || [];
       
       console.log("Processed evaluation:", evaluation);
       

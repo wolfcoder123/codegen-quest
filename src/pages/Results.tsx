@@ -5,6 +5,7 @@ import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { Check, AlertTriangle, Brain, Shield, Zap, Code, Bug, Cpu, Star, Lightbulb, Target, Rocket } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import CodeAnalysisCard from "@/components/CodeAnalysisCard";
 
 export default function Results() {
   const [result, setResult] = useState<EvaluationResult | null>(null);
@@ -224,6 +225,16 @@ export default function Results() {
               </div>
             </div>
           </Card>
+
+          {/* Add the new CodeAnalysis card */}
+          {result && (
+            <Card className="lg:col-span-2">
+              <CodeAnalysisCard 
+                analysis={result.codeAnalysis}
+                learningResources={result.learningResources}
+              />
+            </Card>
+          )}
         </div>
       </div>
     </div>
