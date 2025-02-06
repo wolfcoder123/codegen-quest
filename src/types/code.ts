@@ -62,6 +62,18 @@ export interface CodeAnalysis {
   improvements: string[];
 }
 
+export interface TechStackAnalysis {
+  frontend: string[];
+  backend: string[];
+  databases: string[];
+  tools: string[];
+  codeHighlights: {
+    description: string;
+    code: string;
+    language: string;
+  }[];
+}
+
 export interface EvaluationResult {
   score: number;
   executionTime: number;
@@ -75,6 +87,7 @@ export interface EvaluationResult {
   overallFeedback: string;
   codeAnalysis: CodeAnalysis;
   learningResources: string[];
+  techStack: TechStackAnalysis;
 }
 
 export interface TestCaseResult {

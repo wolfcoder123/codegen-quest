@@ -6,6 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { Check, AlertTriangle, Brain, Shield, Zap, Code, Bug, Cpu, Star, Lightbulb, Target, Rocket } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import CodeAnalysisCard from "@/components/CodeAnalysisCard";
+import TechStackCard from "@/components/TechStackCard";
 
 export default function Results() {
   const [result, setResult] = useState<EvaluationResult | null>(null);
@@ -101,6 +102,13 @@ export default function Results() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Add TechStackCard at the beginning */}
+          {result && result.techStack && (
+            <Card className="lg:col-span-2">
+              <TechStackCard techStack={result.techStack} />
+            </Card>
+          )}
+
           <Card className="p-6 bg-gray-800/30 backdrop-blur border-gray-700/50 shadow-xl">
             <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
               <Target className="w-6 h-6 text-cyan-400" />
@@ -226,7 +234,6 @@ export default function Results() {
             </div>
           </Card>
 
-          {/* Add the new CodeAnalysis card */}
           {result && (
             <Card className="lg:col-span-2">
               <CodeAnalysisCard 

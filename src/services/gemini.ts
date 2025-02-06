@@ -1,4 +1,3 @@
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { CodeProblem, EvaluationResult } from "@/types/code";
 
@@ -25,7 +24,7 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
     ${code}
 
     IMPORTANT: Return ONLY a valid JSON object with NO comments, NO markdown, NO urls, and NO special characters in strings.
-    The JSON object should have this structure:
+    The JSON object should include all previous fields plus a new techStack object with this structure:
     {
       "score": <0-100>,
       "executionTime": <ms>,
@@ -63,7 +62,20 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
       },
       "securityConsiderations": ["<list>"],
       "overallFeedback": "<text>",
-      "learningResources": ["<text>"]
+      "learningResources": ["<text>"],
+      "techStack": {
+        "frontend": ["<list of frontend technologies>"],
+        "backend": ["<list of backend technologies>"],
+        "databases": ["<list of databases>"],
+        "tools": ["<list of tools and infrastructure>"],
+        "codeHighlights": [
+          {
+            "description": "<what this code snippet demonstrates>",
+            "code": "<3-4 lines of notable code>",
+            "language": "<programming language>"
+          }
+        ]
+      }
     }`;
 
     const result = await model.generateContent(prompt);
@@ -161,6 +173,15 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
       evaluation.performanceMetrics.timeComplexity = cleanString(evaluation.performanceMetrics.timeComplexity);
       evaluation.performanceMetrics.spaceComplexity = cleanString(evaluation.performanceMetrics.spaceComplexity);
       
+      // Add techStack validation
+      evaluation.techStack = evaluation.techStack || {
+        frontend: [],
+        backend: [],
+        databases: [],
+        tools: [],
+        codeHighlights: []
+      };
+
       return evaluation;
     } catch (parseError) {
       console.error("Failed to parse Gemini response:", parseError);
