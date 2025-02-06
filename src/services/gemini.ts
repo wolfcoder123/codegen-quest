@@ -1,3 +1,4 @@
+
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { CodeProblem, EvaluationResult } from "@/types/code";
 
@@ -23,45 +24,45 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
     USER'S CODE:
     ${code}
 
-    Evaluate the code and return a JSON object with the following structure (NO comments, NO markdown, ONLY valid JSON):
+    Return a JSON object with the following structure (NO comments, NO markdown, ONLY valid JSON, NO urls or special characters in strings):
     {
       "score": <overall score between 0-100>,
       "executionTime": <estimated execution time in ms>,
       "memory": <estimated memory usage in MB>,
       "problemSolvingScore": {
         "score": <score between 0-100>,
-        "approach": "<detailed analysis of problem-solving approach>",
-        "creativity": "<analysis of creative solutions and innovative thinking>",
-        "edgeCases": ["<list of edge cases handled or missed>"]
+        "approach": "<brief analysis of problem-solving approach>",
+        "creativity": "<brief analysis of creative solutions>",
+        "edgeCases": ["<list of edge cases>"]
       },
       "codeQualityScore": {
         "score": <score between 0-100>,
-        "patterns": ["<list of design patterns used>"],
-        "strengths": ["<detailed list of code strengths>"],
-        "suggestions": ["<specific improvement suggestions>"]
+        "patterns": ["<list of patterns>"],
+        "strengths": ["<list of strengths>"],
+        "suggestions": ["<list of suggestions>"]
       },
       "technicalProficiency": {
         "score": <score between 0-100>,
-        "advancedFeatures": ["<list of advanced language features used>"],
-        "bestPractices": ["<list of best practices followed>"],
-        "areasOfExpertise": ["<areas where code shows expertise>"],
-        "improvementAreas": ["<specific areas needing improvement>"]
+        "advancedFeatures": ["<list of features>"],
+        "bestPractices": ["<list of practices>"],
+        "areasOfExpertise": ["<list of areas>"],
+        "improvementAreas": ["<list of areas>"]
       },
       "performanceMetrics": {
-        "timeComplexity": "<Big O notation>",
-        "spaceComplexity": "<Big O notation>",
-        "bottlenecks": ["<list of performance bottlenecks>"],
-        "optimizations": ["<suggested optimizations>"]
+        "timeComplexity": "<complexity>",
+        "spaceComplexity": "<complexity>",
+        "bottlenecks": ["<list of bottlenecks>"],
+        "optimizations": ["<list of optimizations>"]
       },
       "codeAnalysis": {
-        "strengths": ["<detailed list of code strengths with explanations>"],
-        "weaknesses": ["<detailed list of code weaknesses with explanations>"],
-        "bestPractices": ["<list of best practices implemented>"],
-        "improvements": ["<detailed suggestions for improvement>"]
+        "strengths": ["<list of strengths>"],
+        "weaknesses": ["<list of weaknesses>"],
+        "bestPractices": ["<list of practices>"],
+        "improvements": ["<list of improvements>"]
       },
-      "securityConsiderations": ["<list of security considerations>"],
-      "overallFeedback": "<comprehensive feedback>",
-      "learningResources": ["<recommended resources for improvement>"]
+      "securityConsiderations": ["<list of considerations>"],
+      "overallFeedback": "<brief feedback>",
+      "learningResources": ["<title of resource>"]
     }`;
 
     const result = await model.generateContent(prompt);
@@ -72,13 +73,16 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
       .replace(/```\s*$/g, '')
       .replace(/\/\/.*/g, '')
       .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/https?:\/\/[^\s"\]]+/g, '') // Remove URLs
+      .replace(/[^\x20-\x7E]/g, '') // Remove non-printable characters
       .trim();
 
     try {
       const evaluation = JSON.parse(cleanedResponse);
       
+      // Validate and normalize scores
       if (!evaluation.score || typeof evaluation.score !== 'number') {
-        throw new Error("Invalid score in evaluation response");
+        evaluation.score = 0;
       }
       
       evaluation.score = Math.min(100, Math.max(0, Number(evaluation.score)));
@@ -95,26 +99,37 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
         evaluation.technicalProficiency.score = Math.min(100, Math.max(0, Number(evaluation.technicalProficiency.score)));
       }
       
+      // Ensure all arrays exist to prevent undefined errors
       evaluation.testCaseResults = evaluation.testCaseResults || [];
       evaluation.securityConsiderations = evaluation.securityConsiderations || [];
+      evaluation.learningResources = evaluation.learningResources || [];
+      
       evaluation.codeQualityScore = evaluation.codeQualityScore || {};
       evaluation.codeQualityScore.patterns = evaluation.codeQualityScore.patterns || [];
       evaluation.codeQualityScore.strengths = evaluation.codeQualityScore.strengths || [];
       evaluation.codeQualityScore.suggestions = evaluation.codeQualityScore.suggestions || [];
+      
       evaluation.technicalProficiency = evaluation.technicalProficiency || {};
       evaluation.technicalProficiency.advancedFeatures = evaluation.technicalProficiency.advancedFeatures || [];
       evaluation.technicalProficiency.bestPractices = evaluation.technicalProficiency.bestPractices || [];
       evaluation.technicalProficiency.areasOfExpertise = evaluation.technicalProficiency.areasOfExpertise || [];
+      evaluation.technicalProficiency.improvementAreas = evaluation.technicalProficiency.improvementAreas || [];
+      
       evaluation.performanceMetrics = evaluation.performanceMetrics || {};
       evaluation.performanceMetrics.bottlenecks = evaluation.performanceMetrics.bottlenecks || [];
       evaluation.performanceMetrics.optimizations = evaluation.performanceMetrics.optimizations || [];
+      
       evaluation.codeAnalysis = evaluation.codeAnalysis || {
         strengths: [],
         weaknesses: [],
         bestPractices: [],
         improvements: []
       };
-      evaluation.learningResources = evaluation.learningResources || [];
+
+      // Set default values for required fields if missing
+      evaluation.executionTime = evaluation.executionTime || 0;
+      evaluation.memory = evaluation.memory || 0;
+      evaluation.overallFeedback = evaluation.overallFeedback || "No feedback provided";
       
       return evaluation;
     } catch (parseError) {
@@ -136,7 +151,7 @@ export async function generateQuestion(): Promise<CodeProblem> {
 
 The question should focus on distributed systems, scalability, or modern web architecture.
 
-Return the question in this JSON format (NO comments, NO markdown, ONLY valid JSON):
+Return a JSON object with the following structure (NO comments, NO markdown, ONLY valid JSON, NO urls or special characters):
 {
   "id": "<unique id>",
   "title": "<challenging problem title>",
@@ -167,10 +182,18 @@ Return the question in this JSON format (NO comments, NO markdown, ONLY valid JS
       .replace(/```\s*$/g, '')
       .replace(/\/\/.*/g, '')
       .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/https?:\/\/[^\s"\]]+/g, '') // Remove URLs
+      .replace(/[^\x20-\x7E]/g, '') // Remove non-printable characters
       .trim();
 
-    const question = JSON.parse(cleanedResponse);
-    return question;
+    try {
+      const question = JSON.parse(cleanedResponse);
+      return question;
+    } catch (parseError) {
+      console.error("Failed to parse Gemini response:", parseError);
+      console.error("Raw response:", cleanedResponse);
+      throw new Error("Invalid response format from Gemini API");
+    }
   } catch (error) {
     console.error("Error generating question:", error);
     throw error;
