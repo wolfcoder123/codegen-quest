@@ -9,9 +9,6 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
     throw new Error("No code submitted for evaluation");
   }
 
-  console.log("Evaluating code:", code);
-  console.log("Problem:", problem.title);
-
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     
@@ -65,40 +62,25 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
       "securityConsiderations": ["<list of security considerations>"],
       "overallFeedback": "<comprehensive feedback>",
       "learningResources": ["<recommended resources for improvement>"]
-    }
-
-    Ensure the response:
-    1. Is VALID JSON (no comments, no markdown)
-    2. Includes detailed analysis in each section
-    3. Provides specific, actionable feedback
-    4. Covers all aspects of code quality
-    5. Identifies both strengths and areas for improvement
-    6. Suggests concrete optimization strategies
-    7. Evaluates algorithmic complexity accurately
-    8. Includes specific examples from the code to support feedback`;
+    }`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
     
-    console.log("Raw Gemini response:", response.text());
-    
-    // Remove any potential markdown formatting or comments
     const cleanedResponse = response.text()
       .replace(/```json\s*/g, '')
       .replace(/```\s*$/g, '')
-      .replace(/\/\/.*/g, '') // Remove single-line comments
-      .replace(/\/\*[\s\S]*?\*\//g, '') // Remove multi-line comments
+      .replace(/\/\/.*/g, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
       .trim();
 
     try {
       const evaluation = JSON.parse(cleanedResponse);
       
-      // Validate and normalize required fields
       if (!evaluation.score || typeof evaluation.score !== 'number') {
         throw new Error("Invalid score in evaluation response");
       }
       
-      // Normalize scores to 0-100 range
       evaluation.score = Math.min(100, Math.max(0, Number(evaluation.score)));
       
       if (evaluation.problemSolvingScore) {
@@ -113,7 +95,6 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
         evaluation.technicalProficiency.score = Math.min(100, Math.max(0, Number(evaluation.technicalProficiency.score)));
       }
       
-      // Ensure arrays exist even if empty
       evaluation.testCaseResults = evaluation.testCaseResults || [];
       evaluation.securityConsiderations = evaluation.securityConsiderations || [];
       evaluation.codeQualityScore = evaluation.codeQualityScore || {};
@@ -135,8 +116,6 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
       };
       evaluation.learningResources = evaluation.learningResources || [];
       
-      console.log("Processed evaluation:", evaluation);
-      
       return evaluation;
     } catch (parseError) {
       console.error("Failed to parse Gemini response:", parseError);
@@ -145,6 +124,55 @@ export async function evaluateCode(code: string, problem: CodeProblem): Promise<
     }
   } catch (error) {
     console.error("Error evaluating code:", error);
+    throw error;
+  }
+}
+
+export async function generateQuestion(): Promise<CodeProblem> {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    
+    const prompt = `Generate an extremely challenging, complex coding question that addresses real-world problems using modern tech stacks (Next.js, Python, JavaScript, TypeScript) for 2025. 
+
+The question should focus on distributed systems, scalability, or modern web architecture.
+
+Return the question in this JSON format (NO comments, NO markdown, ONLY valid JSON):
+{
+  "id": "<unique id>",
+  "title": "<challenging problem title>",
+  "description": "<detailed problem description>",
+  "difficulty": "Expert",
+  "timeLimit": 3600,
+  "testCases": [
+    {
+      "input": "<example input>",
+      "expectedOutput": "<expected output>"
+    }
+  ],
+  "constraints": ["<list of technical constraints>"],
+  "examples": [
+    {
+      "input": "<example scenario>",
+      "output": "<expected behavior>",
+      "explanation": "<detailed explanation>"
+    }
+  ]
+}`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    
+    const cleanedResponse = response.text()
+      .replace(/```json\s*/g, '')
+      .replace(/```\s*$/g, '')
+      .replace(/\/\/.*/g, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .trim();
+
+    const question = JSON.parse(cleanedResponse);
+    return question;
+  } catch (error) {
+    console.error("Error generating question:", error);
     throw error;
   }
 }
