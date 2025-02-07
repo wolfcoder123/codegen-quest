@@ -44,20 +44,32 @@ export default function LiveCodeRunner({ code, language, onLanguageChange }: Liv
     }
 
     setIsRunning(true);
-    try {
-      // Create submission
-      const submission = await axios.post(`${JUDGE0_API}/submissions`, {
+    setOutput('Running code...');
+
+    const options = {
+      method: 'POST',
+      url: `${JUDGE0_API}/submissions`,
+      headers: {
+        'content-type': 'application/json',
+        'X-RapidAPI-Key': import.meta.env.VITE_RAPID_API_KEY,
+        'X-RapidAPI-Host': 'judge0-ce.p.rapidapi.com'
+      },
+      data: {
         source_code: code,
         language_id: getLanguageId(language),
-        stdin: ''
-      }, {
-        headers: {
-          'content-type': 'application/json',
-          'X-RapidAPI-Key': import.meta.env.VITE_RAPID_API_KEY,
-          'X-RapidAPI-Host': 'judge0-ce.p.rapidapi.com'
-        }
-      });
+        stdin: '',
+        expected_output: null,
+        cpu_time_limit: 2,
+        cpu_extra_time: 0.5,
+        wall_time_limit: 5,
+        memory_limit: 128000,
+        stack_limit: 64000,
+        enable_network: false
+      }
+    };
 
+    try {
+      const submission = await axios.request(options);
       const token = submission.data.token;
 
       // Poll for results
@@ -74,11 +86,27 @@ export default function LiveCodeRunner({ code, language, onLanguageChange }: Liv
           attempts--;
           setTimeout(getResult, 1000);
         } else {
-          setOutput(result.data.stdout || result.data.stderr || 'No output');
+          let outputText = '';
+          
+          // Handle different types of output
+          if (result.data.stdout) {
+            outputText = result.data.stdout;
+          } else if (result.data.stderr) {
+            outputText = `Error: ${result.data.stderr}`;
+          } else if (result.data.compile_output) {
+            outputText = `Compilation Error: ${result.data.compile_output}`;
+          } else if (result.data.message) {
+            outputText = `Execution Error: ${result.data.message}`;
+          } else {
+            outputText = 'No output generated';
+          }
+
+          setOutput(outputText);
+
           if (result.data.status?.id === 3) {
             toast({
               title: "Code Executed",
-              description: "Code ran successfully in the live runner",
+              description: "Code ran successfully!",
             });
           } else {
             toast({
