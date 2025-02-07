@@ -1,18 +1,21 @@
+
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import CodeEditor from '@/components/CodeEditor';
+import LiveCodeRunner from '@/components/LiveCodeRunner';
 import Timer from '@/components/Timer';
 import { evaluateCode } from '@/services/gemini';
 import { complexQuestions } from '@/services/questions';
 import { toast } from "@/components/ui/use-toast";
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Clock, Code2, Cpu } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Code2, Cpu, Play } from "lucide-react";
 
 export default function Index() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [code, setCode] = useState("");
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('javascript');
   const navigate = useNavigate();
 
   const currentQuestion = complexQuestions[currentQuestionIndex];
@@ -84,7 +87,7 @@ export default function Index() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="p-6 bg-gray-800/50 backdrop-blur border-gray-700/50">
             <div className="space-y-6">
               <div className="prose prose-invert max-w-none">
@@ -132,7 +135,7 @@ export default function Index() {
               <CodeEditor
                 value={code}
                 onChange={setCode}
-                language="javascript"
+                language={selectedLanguage}
                 className="h-full"
               />
             </div>
@@ -181,6 +184,12 @@ export default function Index() {
               </div>
             </div>
           </div>
+
+          <LiveCodeRunner
+            code={code}
+            language={selectedLanguage}
+            onLanguageChange={setSelectedLanguage}
+          />
         </div>
       </div>
     </div>

@@ -1,3 +1,4 @@
+
 import Editor from "@monaco-editor/react";
 
 interface CodeEditorProps {
@@ -7,17 +8,28 @@ interface CodeEditorProps {
   className?: string;
 }
 
+const supportedLanguages = {
+  python: 'python',
+  javascript: 'javascript',
+  java: 'java',
+  cpp: 'cpp',
+  csharp: 'csharp',
+  typescript: 'typescript'
+};
+
 export default function CodeEditor({
   value,
   onChange,
   language = "javascript",
   className = "",
 }: CodeEditorProps) {
+  const editorLanguage = supportedLanguages[language as keyof typeof supportedLanguages] || 'javascript';
+
   return (
     <div className={className}>
       <Editor
         height="100%"
-        defaultLanguage={language}
+        defaultLanguage={editorLanguage}
         value={value}
         onChange={(value) => onChange(value || "")}
         theme="vs-dark"
