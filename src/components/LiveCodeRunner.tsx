@@ -23,6 +23,7 @@ const supportedLanguages = [
 ];
 
 const JUDGE0_API = 'https://judge0-ce.p.rapidapi.com';
+const RAPID_API_KEY = 'e770a4f2aamsh17408e1193bc728p123a90jsn37b53b431c94';
 
 export default function LiveCodeRunner({ code, language, onLanguageChange }: LiveCodeRunnerProps) {
   const [output, setOutput] = useState<string>('');
@@ -51,7 +52,7 @@ export default function LiveCodeRunner({ code, language, onLanguageChange }: Liv
       url: `${JUDGE0_API}/submissions`,
       headers: {
         'content-type': 'application/json',
-        'X-RapidAPI-Key': import.meta.env.VITE_RAPID_API_KEY,
+        'X-RapidAPI-Key': RAPID_API_KEY,
         'X-RapidAPI-Host': 'judge0-ce.p.rapidapi.com'
       },
       data: {
@@ -77,7 +78,7 @@ export default function LiveCodeRunner({ code, language, onLanguageChange }: Liv
       const getResult = async () => {
         const result = await axios.get(`${JUDGE0_API}/submissions/${token}`, {
           headers: {
-            'X-RapidAPI-Key': import.meta.env.VITE_RAPID_API_KEY,
+            'X-RapidAPI-Key': RAPID_API_KEY,
             'X-RapidAPI-Host': 'judge0-ce.p.rapidapi.com'
           }
         });
