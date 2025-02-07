@@ -8,13 +8,13 @@ interface CodeEditorProps {
   className?: string;
 }
 
-const supportedLanguages = {
-  python: 'python',
-  javascript: 'javascript',
-  java: 'java',
-  cpp: 'cpp',
-  csharp: 'csharp',
-  typescript: 'typescript'
+const languageMap = {
+  'python': 'python',
+  'javascript': 'javascript',
+  'java': 'java',
+  'cpp': 'cpp',
+  'csharp': 'csharp',
+  'typescript': 'typescript'
 };
 
 export default function CodeEditor({
@@ -23,13 +23,14 @@ export default function CodeEditor({
   language = "javascript",
   className = "",
 }: CodeEditorProps) {
-  const editorLanguage = supportedLanguages[language as keyof typeof supportedLanguages] || 'javascript';
+  const editorLanguage = languageMap[language as keyof typeof languageMap] || 'javascript';
 
   return (
     <div className={className}>
       <Editor
         height="100%"
         defaultLanguage={editorLanguage}
+        language={editorLanguage}
         value={value}
         onChange={(value) => onChange(value || "")}
         theme="vs-dark"

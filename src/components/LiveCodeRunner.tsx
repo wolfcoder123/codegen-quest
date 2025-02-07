@@ -1,9 +1,11 @@
+
 import { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Play, Terminal } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import axios from 'axios';
 
 interface LiveCodeRunnerProps {
   code: string;
@@ -12,38 +14,92 @@ interface LiveCodeRunnerProps {
 }
 
 const supportedLanguages = [
-  { value: 'python', label: 'Python' },
-  { value: 'javascript', label: 'JavaScript' },
-  { value: 'java', label: 'Java' },
-  { value: 'cpp', label: 'C++' },
-  { value: 'csharp', label: 'C#' },
-  { value: 'typescript', label: 'TypeScript' }
+  { value: 'python', label: 'Python', id: 71 },
+  { value: 'javascript', label: 'JavaScript', id: 63 },
+  { value: 'java', label: 'Java', id: 62 },
+  { value: 'cpp', label: 'C++', id: 54 },
+  { value: 'csharp', label: 'C#', id: 51 },
+  { value: 'typescript', label: 'TypeScript', id: 74 }
 ];
+
+const JUDGE0_API = 'https://judge0-ce.p.rapidapi.com';
 
 export default function LiveCodeRunner({ code, language, onLanguageChange }: LiveCodeRunnerProps) {
   const [output, setOutput] = useState<string>('');
   const [isRunning, setIsRunning] = useState(false);
 
+  const getLanguageId = (lang: string): number => {
+    const language = supportedLanguages.find(l => l.value === lang);
+    return language?.id || 63; // default to JavaScript if not found
+  };
+
   const runCode = async () => {
-    setIsRunning(true);
-    try {
-      // This is a mock implementation. In a real app, you would connect to a backend service
-      // that can execute code in different languages
-      const mockOutput = `Running ${language} code...\n${code}\n\nOutput:\nMock output for demonstration`;
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate execution delay
-      setOutput(mockOutput);
+    if (!code.trim()) {
       toast({
-        title: "Code Executed",
-        description: "Code ran successfully in the live runner",
-      });
-    } catch (error) {
-      setOutput(`Error executing code: ${error}`);
-      toast({
-        title: "Execution Error",
-        description: "Failed to run the code",
+        title: "No Code to Run",
+        description: "Please write some code before running.",
         variant: "destructive",
       });
-    } finally {
+      return;
+    }
+
+    setIsRunning(true);
+    try {
+      // Create submission
+      const submission = await axios.post(`${JUDGE0_API}/submissions`, {
+        source_code: code,
+        language_id: getLanguageId(language),
+        stdin: ''
+      }, {
+        headers: {
+          'content-type': 'application/json',
+          'X-RapidAPI-Key': import.meta.env.VITE_RAPID_API_KEY,
+          'X-RapidAPI-Host': 'judge0-ce.p.rapidapi.com'
+        }
+      });
+
+      const token = submission.data.token;
+
+      // Poll for results
+      let attempts = 10;
+      const getResult = async () => {
+        const result = await axios.get(`${JUDGE0_API}/submissions/${token}`, {
+          headers: {
+            'X-RapidAPI-Key': import.meta.env.VITE_RAPID_API_KEY,
+            'X-RapidAPI-Host': 'judge0-ce.p.rapidapi.com'
+          }
+        });
+
+        if (result.data.status?.id <= 2 && attempts > 0) {
+          attempts--;
+          setTimeout(getResult, 1000);
+        } else {
+          setOutput(result.data.stdout || result.data.stderr || 'No output');
+          if (result.data.status?.id === 3) {
+            toast({
+              title: "Code Executed",
+              description: "Code ran successfully in the live runner",
+            });
+          } else {
+            toast({
+              title: "Execution Issue",
+              description: result.data.status?.description || "There was an issue running the code",
+              variant: "destructive",
+            });
+          }
+          setIsRunning(false);
+        }
+      };
+
+      await getResult();
+    } catch (error) {
+      console.error('Code execution error:', error);
+      setOutput(`Error executing code: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast({
+        title: "Execution Error",
+        description: "Failed to run the code. Please try again.",
+        variant: "destructive",
+      });
       setIsRunning(false);
     }
   };
