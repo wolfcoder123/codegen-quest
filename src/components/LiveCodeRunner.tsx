@@ -28,6 +28,7 @@ const RAPID_API_KEY = 'e770a4f2aamsh17408e1193bc728p123a90jsn37b53b431c94';
 export default function LiveCodeRunner({ code, language, onLanguageChange }: LiveCodeRunnerProps) {
   const [output, setOutput] = useState<string>('');
   const [isRunning, setIsRunning] = useState(false);
+  const [stdin, setStdin] = useState<string>('');
 
   const getLanguageId = (lang: string): number => {
     const language = supportedLanguages.find(l => l.value === lang);
@@ -58,7 +59,7 @@ export default function LiveCodeRunner({ code, language, onLanguageChange }: Liv
       data: {
         source_code: code,
         language_id: getLanguageId(language),
-        stdin: '',
+        stdin: stdin,
         expected_output: null,
         cpu_time_limit: 2,
         cpu_extra_time: 0.5,
@@ -153,6 +154,13 @@ export default function LiveCodeRunner({ code, language, onLanguageChange }: Liv
           </SelectContent>
         </Select>
       </div>
+
+      <textarea
+        placeholder="Enter input for your program (optional)"
+        value={stdin}
+        onChange={(e) => setStdin(e.target.value)}
+        className="w-full h-20 p-2 bg-gray-900 text-gray-300 rounded-lg font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500"
+      />
 
       <Button
         onClick={runCode}
